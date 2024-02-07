@@ -1,17 +1,19 @@
 {
-	"compilerOptions": {
-        "module": "esNext",
-		"target": "es5",
-		"moduleResolution": "node",
-		"strict": true,
-		"noImplicitAny": true,
-        "noImplicitReturns": true,
-        "noImplicitThis": true,
-        "strictNullChecks": true,
-        "strictFunctionTypes": true,
-        "skipLibCheck": true,
-		"preserveConstEnums":true,
-        "sourceMap": true,
-        "rootDir": "src"
-	}
+  "compilerOptions": {
+    "target": "esnext",
+    "useDefineForClassFields": true,
+    "module": "esnext",
+    "lib": ["esnext", "dom"],
+    "moduleResolution": "node",
+    "strict": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "noEmit": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"]
 }
