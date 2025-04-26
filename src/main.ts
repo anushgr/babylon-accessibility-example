@@ -16,7 +16,7 @@ import { StackPanel } from "@babylonjs/gui/2D/controls/stackPanel";
 import { TextBlock } from "@babylonjs/gui/2D/controls/textBlock";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
-import { WebGPUEngine } from "@babylonjs/core/Engines/webgpuEngine";
+// import { WebGPUEngine } from "@babylonjs/core/Engines/webgpuEngine";
 
 import "@babylonjs/core/Loading/loadingScreen";
 import "@babylonjs/loaders/glTF";
@@ -26,20 +26,18 @@ import "@babylonjs/core/Animations/animatable";
 import "@babylonjs/core/Helpers/sceneHelpers";
 
 class Game {
-    private _scene: Scene;
+    private _scene!: Scene;
     private _useAnimations = true;
 
-    constructor(private _engine: Engine) {
-        this._scene = new Scene(_engine);
-    }
+    constructor(private _engine: Engine) {}
 
     async start() {
+        this._scene = new Scene(this._engine);
+
         if (import.meta.env.DEV) {
             import("@babylonjs/inspector")
                 .then(() => {
-                    // Hide/show the Inspector
                     window.addEventListener("keydown", (ev) => {
-                        // Ctrl+I
                         if (ev.ctrlKey && ev.key === "I") {
                             if (this._scene.debugLayer.isVisible()) {
                                 this._scene.debugLayer.hide();
@@ -58,15 +56,13 @@ class Game {
             await this.buildSceneObjects(this._scene);
 
         amy.accessibilityTag = {
-            description:
-                "A young girl named Amy. She is happy you are doing her quiz!",
+            description: "A young girl named Amy. She is happy you are doing her quiz!",
         };
 
         shark.accessibilityTag = {
             description: "A powerful shark. It is swimming.",
         };
 
-        // Build GUI
         const primaryColor = "#1b1869";
         const secondaryColor = "skyblue";
 
@@ -80,19 +76,13 @@ class Game {
         const { panel: titlePanel, transitionButtons: titleBtns } =
             this.buildTitleGUI(primaryColor, secondaryColor, advancedTexture);
         const { panel: questionPanel, transitionButtons: questionBtns } =
-            this.buildQuestionGUI(
-                primaryColor,
-                secondaryColor,
-                advancedTexture
-            );
+            this.buildQuestionGUI(primaryColor, secondaryColor, advancedTexture);
         const { panel: answerPanel, transitionButtons: answerBtns } =
             this.buildAnswerGUI(primaryColor, secondaryColor, advancedTexture);
 
-        // Hide question and answer panels
         questionPanel.isVisible = false;
         answerPanel.isVisible = false;
 
-        // Transition from title to question
         titleBtns[0].onPointerClickObservable.add(() => {
             this.swapContainers(this._scene, titlePanel, questionPanel);
             this.swapAnimations(waveAnim, idleAnim);
@@ -102,7 +92,6 @@ class Game {
             );
         });
 
-        // Transition from question to answer
         questionBtns.forEach((btn) => {
             btn.onPointerClickObservable.add(() => {
                 this.swapContainers(this._scene, questionPanel, answerPanel);
@@ -110,7 +99,6 @@ class Game {
             });
         });
 
-        // Transition from answer to title
         answerBtns[0].onPointerClickObservable.add(() => {
             this.swapContainers(this._scene, answerPanel, titlePanel);
             this.swapModels(this._scene, shark, amy);
@@ -251,7 +239,6 @@ class Game {
         );
 
         this.addText("Welcome to Amy's Quiz!", 96, primaryColor, titlePanel);
-
         this.addText(
             "Click on the button below to start the quiz!",
             56,
@@ -477,7 +464,6 @@ class Game {
         );
 
         const amy = meshes[0];
-
         const amyTransformParent = new TransformNode("amyTransform");
         amy.parent = amyTransformParent;
 
@@ -531,20 +517,48 @@ class Game {
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
-    const canvas = document.getElementById("renderCanvas") as HTMLCanvasElement;
-    let engine: Engine;
-    const webGPUSupported = await WebGPUEngine.IsSupportedAsync;
-    if (webGPUSupported) {
-        const webgpu = (engine = new WebGPUEngine(canvas, {
-            adaptToDeviceRatio: true,
-            antialias: true,
-        }));
-        await webgpu.initAsync();
-        engine = webgpu;
-    } else {
-        engine = new Engine(canvas, true);
+    const canvas = document.getElementById("renderCanvas");
+    if (!(canvas instanceof HTMLCanvasElement)) {
+        throw new Error("Render canvas element not found or is not a canvas.");
     }
 
+    let engine: Engine;
+
+    // Temporarily force WebGL due to WebGPU issues
+    console.log("Initializing WebGL engine...");
+    engine = new Engine(canvas, true, { adaptToDeviceRatio: true });
+    console.log("WebGL engine initialized successfully.");
+
+    /*
+    // Uncomment this block to re-enable WebGPU support after verifying browser compatibility
+    try {
+        const webGPUSupported = await WebGPUEngine.IsSupportedAsync;
+        if (webGPUSupported) {
+            console.log("WebGPU is supported, attempting to initialize...");
+            const webgpu = new WebGPUEngine(canvas, {
+                adaptToDeviceRatio: true,
+                antialias: true,
+            });
+            await webgpu.initAsync();
+            engine = webgpu;
+            console.log("WebGPU engine initialized successfully.");
+        } else {
+            console.warn("WebGPU is not supported, falling back to WebGL.");
+            engine = new Engine(canvas, true, { adaptToDeviceRatio: true });
+            console.log("WebGL engine initialized successfully.");
+        }
+    } catch (error) {
+        console.error("WebGPU initialization failed:", error);
+        console.warn("Falling back to WebGL engine.");
+        engine = new Engine(canvas, true, { adaptToDeviceRatio: true });
+        console.log("WebGL engine initialized successfully.");
+    }
+    */
+
     const game = new Game(engine);
-    game.start();
+    try {
+        await game.start();
+    } catch (error) {
+        console.error("Failed to start game:", error);
+    }
 });
